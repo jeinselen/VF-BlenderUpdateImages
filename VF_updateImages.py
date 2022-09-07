@@ -89,7 +89,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 	filter2_name: bpy.props.StringProperty(
 		name="Filter Name",
 		description="String to match in the image name",
-		default="-normal",
+		default="-orm",
 		maxlen=4096)
 	filter2_colorspace: bpy.props.EnumProperty(
 		name='Color Space',
@@ -119,7 +119,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 	filter3_name: bpy.props.StringProperty(
 		name="Filter Name",
 		description="String to match in the image name",
-		default="",
+		default="-normal",
 		maxlen=4096)
 	filter3_colorspace: bpy.props.EnumProperty(
 		name='Color Space',
@@ -134,7 +134,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 			('sRGB', 'sRGB', 'sRGB color space'),
 			('XYZ', 'XYZ', 'XYZ color space')
 			],
-		default='sRGB')
+		default='Non-Color')
 	filter3_alphamode: bpy.props.EnumProperty(
 		name='Alpha Mode',
 		description='Set matching files to this alpha mode',
@@ -144,7 +144,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 			('CHANNEL_PACKED', 'Channel Packed', 'Treat the alpha as a fourth color channel without masking'),
 			('NONE', 'None', 'Ignore alpha channel')
 			],
-		default='STRAIGHT')
+		default='CHANNEL_PACKED')
 
 	filter4_name: bpy.props.StringProperty(
 		name="Filter Name",
