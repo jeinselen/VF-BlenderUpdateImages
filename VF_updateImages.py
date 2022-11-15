@@ -1,7 +1,7 @@
 bl_info = {
 	"name": "VF Update Images",
 	"author": "John Einselen - Vectorform LLC",
-	"version": (0, 1),
+	"version": (0, 2),
 	"blender": (3, 2, 0),
 	"location": "Image Editor > Image > Update Images",
 	"description": "Reloads images and updates settings based on file naming patterns",
@@ -12,6 +12,7 @@ bl_info = {
 
 # Helped by the following resources:
 # https://blender.stackexchange.com/questions/44836/reloading-multiple-images
+# https://docs.blender.org/api/current/bpy.types.Image.html#bpy.types.Image
 
 import bpy
 
@@ -20,8 +21,8 @@ import bpy
 
 class VF_Update_Images(bpy.types.Operator):
 	bl_idname = "vfupdateimages.offset"
-	bl_label = "Update Images"
-	bl_icon = "FILE_REFRESH"
+	bl_label = "Update All Images"
+	bl_icon = "RENDERLAYERS"
 	bl_description = "Process all images, updating colour space and alpha channel settings based on name patterns, and reloading any images that don't have unsaved changes in Blender"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -47,6 +48,44 @@ class VF_Update_Images(bpy.types.Operator):
 			elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_name.lower() in imageName:
 				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_colorspace
 				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_alphamode
+		return {'FINISHED'}
+
+###########################################################################
+# Replace images (file extension swap)
+
+class VF_Switch_Extension_Settings(bpy.types.Operator):
+	bl_idname = "vfswitchextensionsettings.offset"
+	bl_label = "Switch File Extension Settings"
+	bl_icon = "FILE_REFRESH"
+	bl_description = "Process all images, updating colour space and alpha channel settings based on name patterns, and reloading any images that don't have unsaved changes in Blender"
+	bl_options = {'REGISTER', 'UNDO'}
+	
+	def execute(self, context):
+		source = bpy.context.scene.vf_update_images_settings.file_extension_source
+		target = bpy.context.scene.vf_update_images_settings.file_extension_target
+		bpy.context.scene.vf_update_images_settings.file_extension_source = target
+		bpy.context.scene.vf_update_images_settings.file_extension_target = source
+		return {'FINISHED'}
+
+class VF_Replace_Image_Extensions(bpy.types.Operator):
+	bl_idname = "vfreplaceimageextensions.offset"
+	bl_label = "Replace All Image Extensions"
+	bl_icon = "FILE_REFRESH"
+	bl_description = "Replace all images that match the source file extension (left) with files using the target file extension (right), assumes that files already exist in the file system"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	def execute(self, context):
+		source = bpy.context.scene.vf_update_images_settings.file_extension_source
+		target = bpy.context.scene.vf_update_images_settings.file_extension_target
+
+		for image in bpy.data.images:
+			# Prevent replacing files that have unsaved changes in Blender
+			if not image.is_dirty:
+				image.filepath = image.filepath.replace(source, target)
+				image.name = image.name.replace(source, target)
+#				image.reload()
+		bpy.context.scene.vf_update_images_settings.file_extension_source = target
+		bpy.context.scene.vf_update_images_settings.file_extension_target = source
 		return {'FINISHED'}
 
 ###########################################################################
@@ -247,25 +286,71 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 		row5.prop(self, "filter5_colorspace", text='')
 		row5.prop(self, "filter5_alphamode", text='')
 
-# Display button
+###########################################################################
+# Individual project settings
+		
+class UpdateImagesSettings(bpy.types.PropertyGroup):
+	file_extension_source: bpy.props.StringProperty(
+		name="Source File Extension",
+		description="Define the file extension you want to replace",
+		default=".png",
+		maxlen=4096)
+	file_extension_target: bpy.props.StringProperty(
+		name="Target File Extension",
+		description="Replace all source file extensions with this file extension",
+		default=".jpg",
+		maxlen=4096)
+
+###########################################################################
+# Display in Node panel
+
+class IMAGE_PT_update_images_display(bpy.types.Panel):
+	bl_space_type = 'NODE_EDITOR'
+	bl_region_type = 'UI'
+	bl_category = "Node"
+	bl_label = "Update Images"
+#	bl_parent_id = "NODE_PT_active_node_properties"
+#	bl_options = {'HIDE_HEADER'}
+
+	def draw(self, context):
+		layout = self.layout
+		layout.use_property_decorate = False  # No animation
+		layout.use_property_split = True
+
+		# Update all images
+		layout.operator(VF_Update_Images.bl_idname, icon='RENDERLAYERS')
+
+		# Display source and target file extensions
+		row = layout.row(align=True)
+#		grid = row.grid_flow(columns=3, align=True)
+		row.prop(context.scene.vf_update_images_settings, 'file_extension_source', text='')
+		row.operator(VF_Switch_Extension_Settings.bl_idname, text='', icon='FILE_REFRESH')
+		row.prop(context.scene.vf_update_images_settings, 'file_extension_target', text='')
+		row.operator(VF_Replace_Image_Extensions.bl_idname, text='Replace')
+
+###########################################################################
+# Display in Image menu
+
 def vf_update_images_button(self, context):
 	self.layout.separator()
 	self.layout.operator(VF_Update_Images.bl_idname)
 
-classes = (VF_Update_Images, UpdateImagesPreferences)
-
 ###########################################################################
 # Addon registration functions
+
+classes = (VF_Update_Images, VF_Switch_Extension_Settings, VF_Replace_Image_Extensions, UpdateImagesPreferences, UpdateImagesSettings, IMAGE_PT_update_images_display)
 
 def register():
 	for cls in classes:
 		bpy.utils.register_class(cls)
+	bpy.types.Scene.vf_update_images_settings = bpy.props.PointerProperty(type=UpdateImagesSettings)
 #	bpy.types.IMAGE_MT_editor_menus.append(vf_update_images_button)
 	bpy.types.IMAGE_MT_image.append(vf_update_images_button)
 
 def unregister():
 	for cls in reversed(classes):
 		bpy.utils.unregister_class(cls)
+	del bpy.types.Scene.vf_update_images_settings
 #	bpy.types.IMAGE_MT_editor_menus.remove(vf_update_images_button)
 	bpy.types.IMAGE_MT_image.remove(vf_update_images_button)
 
