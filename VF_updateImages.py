@@ -1,7 +1,7 @@
 bl_info = {
 	"name": "VF Update Images",
 	"author": "John Einselen - Vectorform LLC",
-	"version": (0, 2),
+	"version": (0, 3),
 	"blender": (3, 2, 0),
 	"location": "Image Editor > Image > Update Images",
 	"description": "Reloads images and updates settings based on file naming patterns",
@@ -25,29 +25,37 @@ class VF_Update_Images(bpy.types.Operator):
 	bl_icon = "RENDERLAYERS"
 	bl_description = "Process all images, updating colour space and alpha channel settings based on name patterns, and reloading any images that don't have unsaved changes in Blender"
 	bl_options = {'REGISTER', 'UNDO'}
-
+	
+	reload: bpy.props.BoolProperty()
+	format: bpy.props.BoolProperty()
+	
 	def execute(self, context):
 		for image in bpy.data.images:
-			# Prevent reloading of files that have unsaved changes in Blender
-			if not image.is_dirty:
-				image.reload()
-			# Update file settings based on file name matches
-			imageName = image.name.lower()
-			if bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_name.lower() in imageName:
-				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_colorspace
-				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_alphamode
-			elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_name.lower() in imageName:
-				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_colorspace
-				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_alphamode
-			elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_name.lower() in imageName:
-				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_colorspace
-				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_alphamode
-			elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_name.lower() in imageName:
-				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_colorspace
-				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_alphamode
-			elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_name.lower() in imageName:
-				image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_colorspace
-				image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_alphamode
+			# Reload all image files
+			if self.reload:
+				# Prevent reloading of files that have unsaved changes in Blender
+				if not image.is_dirty:
+					image.reload()
+			
+			# Format all image files
+			if self.format:
+				# Update file settings based on file name matches
+				imageName = image.name.lower()
+				if bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_name.lower() in imageName:
+					image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_colorspace
+					image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_alphamode
+				elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_name.lower() in imageName:
+					image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_colorspace
+					image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_alphamode
+				elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_name.lower() in imageName:
+					image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_colorspace
+					image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_alphamode
+				elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_name.lower() in imageName:
+					image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_colorspace
+					image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_alphamode
+				elif bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_name.lower() in imageName:
+					image.colorspace_settings.name = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_colorspace
+					image.alpha_mode = bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_alphamode
 		return {'FINISHED'}
 
 ###########################################################################
@@ -73,7 +81,7 @@ class VF_Replace_Image_Extensions(bpy.types.Operator):
 	bl_icon = "FILE_REFRESH"
 	bl_description = "Replace all images that match the source file extension (left) with files using the target file extension (right), assumes that files already exist in the file system"
 	bl_options = {'REGISTER', 'UNDO'}
-
+	
 	def execute(self, context):
 		source = bpy.context.scene.vf_update_images_settings.file_extension_source
 		target = bpy.context.scene.vf_update_images_settings.file_extension_target
@@ -95,6 +103,15 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 	bl_idname = __name__
 
 	# Global Variables
+	enable_file_reload: bpy.props.BoolProperty(
+		name="File Reload",
+		description="Reloads all image files",
+		default=True)
+	enable_file_format: bpy.props.BoolProperty(
+		name="File Format",
+		description="Formats all image files using the specified filters",
+		default=False)
+	
 	filter1_name: bpy.props.StringProperty(
 		name="Filter Name",
 		description="String to match in the image name",
@@ -124,7 +141,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 			('NONE', 'None', 'Ignore alpha channel')
 			],
 		default='STRAIGHT')
-
+	
 	filter2_name: bpy.props.StringProperty(
 		name="Filter Name",
 		description="String to match in the image name",
@@ -184,7 +201,7 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 			('NONE', 'None', 'Ignore alpha channel')
 			],
 		default='CHANNEL_PACKED')
-
+	
 	filter4_name: bpy.props.StringProperty(
 		name="Filter Name",
 		description="String to match in the image name",
@@ -244,41 +261,46 @@ class UpdateImagesPreferences(bpy.types.AddonPreferences):
 			('NONE', 'None', 'Ignore alpha channel')
 			],
 		default='STRAIGHT')
-
+	
 	# User Interface
 	def draw(self, context):
 		layout = self.layout
-
+		
+		layout.prop(self, "enable_file_reload")
+		layout.prop(self, "enable_file_format")
+		
 		grid = layout.grid_flow(row_major=True, columns=2, even_columns=False, even_rows=False, align=False)
-
+		if not bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_format:
+			grid.enabled = False
+		
 		grid.prop(self, "filter1_name", text='')
 		row1 = grid.row(align=False)
 		if not bpy.context.preferences.addons['VF_updateImages'].preferences.filter1_name:
 			row1.enabled = False
 		row1.prop(self, "filter1_colorspace", text='')
 		row1.prop(self, "filter1_alphamode", text='')
-
+		
 		grid.prop(self, "filter2_name", text='')
 		row2 = grid.row(align=False)
 		if not bpy.context.preferences.addons['VF_updateImages'].preferences.filter2_name:
 			row2.enabled = False
 		row2.prop(self, "filter2_colorspace", text='')
 		row2.prop(self, "filter2_alphamode", text='')
-
+		
 		grid.prop(self, "filter3_name", text='')
 		row3 = grid.row(align=False)
 		if not bpy.context.preferences.addons['VF_updateImages'].preferences.filter3_name:
 			row3.enabled = False
 		row3.prop(self, "filter3_colorspace", text='')
 		row3.prop(self, "filter3_alphamode", text='')
-
+		
 		grid.prop(self, "filter4_name", text='')
 		row4 = grid.row(align=False)
 		if not bpy.context.preferences.addons['VF_updateImages'].preferences.filter4_name:
 			row4.enabled = False
 		row4.prop(self, "filter4_colorspace", text='')
 		row4.prop(self, "filter4_alphamode", text='')
-
+		
 		grid.prop(self, "filter5_name", text='')
 		row5 = grid.row(align=False)
 		if not bpy.context.preferences.addons['VF_updateImages'].preferences.filter5_name:
@@ -311,14 +333,23 @@ class IMAGE_PT_update_images_display(bpy.types.Panel):
 	bl_label = "Update Images"
 #	bl_parent_id = "NODE_PT_active_node_properties"
 #	bl_options = {'HIDE_HEADER'}
-
+	
 	def draw(self, context):
 		layout = self.layout
 		layout.use_property_decorate = False  # No animation
 		layout.use_property_split = True
 
 		# Update all images
-		layout.operator(VF_Update_Images.bl_idname, icon='RENDERLAYERS')
+		if bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_reload and bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_format:
+			update_text = 'Update All Images'
+		elif bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_reload:
+			update_text = 'Reload All Images'
+		elif bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_format:
+			update_text = 'Format All Images'
+		if bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_reload or bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_format:
+			ops = layout.operator(VF_Update_Images.bl_idname, text=update_text, icon='RENDERLAYERS')
+			ops.reload = bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_reload
+			ops.format = bpy.context.preferences.addons['VF_updateImages'].preferences.enable_file_format
 
 		# Display source and target file extensions
 		row = layout.row(align=True)
