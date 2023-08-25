@@ -6,8 +6,8 @@ bl_info = {
 	"location": "Image Editor > Image > Update Images",
 	"description": "Reloads images and updates settings based on file naming patterns",
 	"warning": "inexperienced developer, use at your own risk",
-	"wiki_url": "",
-	"tracker_url": "",
+	"doc_url": "https://github.com/jeinselenVF/VF-BlenderUpdateImages",
+	"tracker_url": "https://github.com/jeinselenVF/VF-BlenderUpdateImages/issues",
 	"category": "User Interface"}
 
 # Helped by the following resources:
