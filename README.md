@@ -1,5 +1,7 @@
 # VF Update Images
 
+This add-on was designed for Blender version 2.8-4.1 (though not all previous versions may be fully supported). For Blender 4.2 and onwards, [please see the new Production Kit extension](https://github.com/jeinselen/Blender-ProductionKit).
+
 Reloads images from disk and updates color space + alpha mode settings based on file naming patterns.
 
 Only images without unsaved changes made in Blender will be reloaded, and the pattern matching is case-insensitive for a little more leniency.
